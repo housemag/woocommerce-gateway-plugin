@@ -1,3 +1,49 @@
+# Editors
+project.xml
+project.properties
+/nbproject/private/
+.buildpath
+.project
+.settings*
+sftp-config.json
+.idea
+._*
+
+# Grunt
+/node_modules/
+/deploy/
+package-lock.json
+
+# Composer
+/vendor/
+composer.lock
+
+# Sass
+.sass-cache/
+
+# OS X metadata
+.DS_Store
+
+# Windows junk
+Thumbs.db
+
+# ApiGen
+/wc-apidocs/
+
+# Tests (Unit and E2E)
+/tmp
+/tests/coverage/
+/tests/_output/*
+!/tests/_output/.gitkeep
+
+# Logs
+/logs
+
+# Build assets.
+select2.scss
+/assets/
+/languages/
+
 # Wordpress - ignore core, configuration, examples, uploads and logs.
 # https://github.com/github/gitignore/blob/main/WordPress.gitignore
 
@@ -39,10 +85,10 @@ wp-config.php
 #
 # Note: If you wish to whitelist plugins,
 # uncomment the next line
-#/wp-content/plugins
+/wp-content/plugins
 
 # All themes
 #
 # Note: If you wish to whitelist themes,
 # uncomment the next line
-#/wp-content/themes
+/wp-content/themes
