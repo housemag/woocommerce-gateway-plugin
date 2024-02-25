@@ -85,7 +85,13 @@ final class WC_Gateway_NixPay_Blocks_Support extends AbstractPaymentMethodType
 		return [
 			'title' => $this->get_setting('title'),
 			'description' => $this->get_setting('description'),
-			'supports' => array_filter($this->gateway->supports, [$this->gateway, 'supports'])
+			'supports' => array_filter($this->gateway->supports, [$this->gateway, 'supports']),
+            'params' => $this->getScriptParams()
 		];
 	}
+
+    public function getScriptParams(): array
+    {
+        return $this->gateway->getPaymentFieldsParams();
+    }
 }

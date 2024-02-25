@@ -51,6 +51,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 		$this->has_fields = false;
 		$this->supports = array(
 			'products',
+			'subscription',
 			'subscriptions',
 			'subscription_cancellation',
 			'subscription_suspension',
@@ -366,4 +367,12 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 		return $decoded_body->access_token;
 
 	}
+
+    public function getPaymentFieldsParams()
+    {
+        return [
+            'test_mode' => $this->test_mode,
+        ];
+
+    }
 }
