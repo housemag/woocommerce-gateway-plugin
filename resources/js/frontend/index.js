@@ -8,6 +8,7 @@ import InputDocument from './components/InputDocument';
 import InputHelper from './components/InputHelper';
 import InputLabel from './components/InputLabel';
 import TestMode from './components/TestMode';
+import InputCardNumber from "./components/InputCardNumber";
 
 function formatCurrency(value, currency) {
     if (!Number.isInteger(value) || typeof currency !== 'object') {
@@ -18,13 +19,6 @@ function formatCurrency(value, currency) {
     const integerPart = parts[0]
     const decimalPart = parts[1];
     return `${integerPart}.${decimalPart}`;
-}
-
-function handleCartTotalChange(value, currency) {
-    if (cardFormMounted) {
-        cardForm.unmount();
-    }
-    initCardForm(formatCurrency(value, currency));
 }
 
 const settings = getSetting('nixpay_data', {});
@@ -43,7 +37,6 @@ const label = decodeEntities(settings.title) || defaultLabel;
 const Content = (props) => {
     const {
         test_mode,
-        card_installments_input_helper,
         amount,
         currency_ratio,
     } = settings.params;
@@ -59,6 +52,62 @@ const Content = (props) => {
 
     jQuery(window.mpCheckoutForm).prop('id', mpFormId);
 
+    // useEffect(() => {
+    //     if (cardFormMounted) {
+    //         cardForm.unmount();
+    //     }
+    //     initCardForm();
+    //
+    //     const unsubscribe = onPaymentSetup(async () => {
+    //         const cardholderName = document.querySelector('#form-checkout__cardholderName');
+    //         const cardholderNameErrorMessage = document.querySelector('#mp-card-holder-name-helper');
+    //
+    //         if(cardholderName.value == ''){
+    //             setInputDisplayStyle(cardholderNameErrorMessage, 'flex');
+    //         }
+    //
+    //         function setInputDisplayStyle(inputElement, displayValue) {
+    //             if (inputElement && inputElement.style) {
+    //                 inputElement.style.display = displayValue;
+    //             }
+    //         }
+    //
+    //         if (document.querySelector('#mp_checkout_type').value !== 'wallet_button') {
+    //             try {
+    //                 if (CheckoutPage.validateInputsCreateToken()) {
+    //                     const cardToken = await cardForm.createCardToken();
+    //                     document.querySelector('#cardTokenId').value = cardToken.token;
+    //                 } else {
+    //                     return { type: emitResponse.responseTypes.ERROR };
+    //                 }
+    //             } catch (error) {
+    //                 console.warn('Token creation error: ', error);
+    //             }
+    //         }
+    //
+    //         const checkoutInputs = ref.current;
+    //         const paymentMethodData = {};
+    //
+    //         checkoutInputs.childNodes.forEach((input) => {
+    //             if (input.tagName === 'INPUT' && input.name) {
+    //                 paymentMethodData[input.name] = input.value;
+    //             }
+    //         });
+    //
+    //         // asserting that next submit will be "custom", unless the submitWalletButton function is fired
+    //         setCheckoutType('custom');
+    //
+    //         return {
+    //             type: emitResponse.responseTypes.SUCCESS,
+    //             meta: {
+    //                 paymentMethodData,
+    //             },
+    //         };
+    //     });
+    //
+    //     return () => unsubscribe();
+    // }, [onPaymentSetup, emitResponse.responseTypes.ERROR, emitResponse.responseTypes.SUCCESS]);
+
     return (
         <div>
             <div className={'mp-checkout-custom-load'}>
@@ -66,33 +115,17 @@ const Content = (props) => {
             </div>
             <div className={'mp-checkout-container'}>
                 <div className={'mp-checkout-custom-container'}>
-                    {test_mode ? (
-                        <div className={'mp-checkout-pro-test-mode'}>
-                            <TestMode
-                                title={'test_mode_title'}
-                                description={'test_mode_description'}
-                                linkText={'test_mode_link_text'}
-                                linkSrc={'test_mode_link_src'}
-                            />
-                        </div>
-                    ) : null}
-
                     <div id={'mp-custom-checkout-form-container'}>
 
                         <div className={'mp-checkout-custom-card-form'}>
                             <p className={'mp-checkout-custom-card-form-title'}>Preencha os dados do seu cartão</p>
 
-                            <div className={'mp-checkout-custom-card-row'}>
-                                <InputLabel isOptinal={false} message={'Número do cartão'}
-                                            forId={'mp-card-number'}/>
-                                <div className={'mp-checkout-custom-card-input'}
-                                     id={'form-checkout__cardNumber-container'}></div>
-                                <InputHelper isVisible={false} message={'Dado obrigatório'}
-                                             inputId={'mp-card-number-helper'}/>
-                            </div>
+                            <InputCardNumber hiddenId={'card-number-hidden-input'}
+                                             inputLabelMessage={'Número do cartão'}
+                                             inputHelperMessage={'Dado obrigatório'}/>
 
                             <div className={'mp-checkout-custom-card-row'} id={'mp-card-holder-div'}>
-                                <InputLabel message={'Nome do títular como aparece no cartão'} isOptinal={false}/>
+                                <InputLabel message={'Nome do títular como aparece no cartão'} isOptional={false}/>
 
                                 <input
                                     className={'mp-checkout-custom-card-input mp-card-holder-name'}
@@ -106,17 +139,22 @@ const Content = (props) => {
                                     isVisible={false}
                                     message={'Dado obrigatório'}
                                     inputId={'mp-card-holder-name-helper'}
-                                    dataMain={'mp-card-holder-name'}
                                 />
                             </div>
 
                             <div className={'mp-checkout-custom-card-row mp-checkout-custom-dual-column-row'}>
                                 <div className={'mp-checkout-custom-card-column'}>
-                                    <InputLabel message={'Vencimento'} isOptinal={false}/>
+                                    <InputLabel message={'Vencimento'} isOptional={false}/>
 
-                                    <div
+                                    <input
                                         id={'form-checkout__expirationDate-container'}
                                         className={'mp-checkout-custom-card-input mp-checkout-custom-left-card-input'}
+                                        placeholder={'11/25'}
+                                        style={{
+                                            fontSize: '16px',
+                                            height: '40px',
+                                            padding: '14px',
+                                        }}
                                     />
 
                                     <InputHelper
@@ -127,10 +165,20 @@ const Content = (props) => {
                                 </div>
 
                                 <div className={'mp-checkout-custom-card-column'}>
-                                    <InputLabel message={'Código de segurança'} isOptinal={false}/>
+                                    <InputLabel message={'Código de segurança'} isOptional={false}/>
 
-                                    <div id={'form-checkout__securityCode-container'}
-                                         className={'mp-checkout-custom-card-input'}/>
+                                    <input
+                                        id={'form-checkout__securityCode-container'}
+                                        className={'mp-checkout-custom-card-input'}
+                                        placeholder={'123'}
+                                        style={{
+                                            fontSize: '16px',
+                                            height: '40px',
+                                            padding: '14px',
+                                        }}
+                                        maxLength={3}
+                                    />
+
                                     <p id={'mp-security-code-info'} className={'mp-checkout-custom-info-text'}/>
 
                                     <InputHelper
@@ -153,51 +201,9 @@ const Content = (props) => {
                                     selectName={'identificationType'}
                                     selectDataCheckout={'docType'}
                                     flagError={'docNumberError'}
+                                    documents={["CPF", "CNPJ", "CI", "Outro"]}
+                                    validate={true}
                                 />
-                            </div>
-                        </div>
-
-                        <div id={'mp-checkout-custom-installments'}
-                             className={'mp-checkout-custom-installments-display-none'}>
-                            <p className={'mp-checkout-custom-card-form-title'}>{'Escolha o número de parcelas'}</p>
-
-                            <div id={'mp-checkout-custom-issuers-container'}
-                                 className={'mp-checkout-custom-issuers-container'}>
-                                <div className={'mp-checkout-custom-card-row'}>
-                                    <InputLabel isOptinal={false} message={'Banco emissor'}
-                                                forId={'mp-issuer'}/>
-                                </div>
-
-                                <div className={'mp-input-select-input'}>
-                                    <select name={'issuer'} id={'form-checkout__issuer'}
-                                            className={'mp-input-select-select'}></select>
-                                </div>
-                            </div>
-
-                            <div
-                                id={'mp-checkout-custom-installments-container'}
-                                className={'mp-checkout-custom-installments-container'}
-                            />
-
-                            <InputHelper
-                                isVisible={false}
-                                message={'Escolha o número de parcelas'}
-                                inputId={'mp-installments-helper'}
-                            />
-
-                            <select
-                                style={{display: 'none'}}
-                                data-checkout={'installments'}
-                                name={'installments'}
-                                id={'form-checkout__installments'}
-                                className={'mp-input-select-select'}
-                            />
-
-                            <div id={'mp-checkout-custom-box-input-tax-cft'}>
-                                <div id={'mp-checkout-custom-box-input-tax-tea'}>
-                                    <div id={'mp-checkout-custom-tax-tea-text'}></div>
-                                </div>
-                                <div id={'mp-checkout-custom-tax-cft-text'}></div>
                             </div>
                         </div>
                     </div>
@@ -211,12 +217,12 @@ const Content = (props) => {
                 <input type={'hidden'} id={'cardExpirationMonth'} data-checkout={'cardExpirationMonth'}/>
                 <input type={'hidden'} id={'cardInstallments'} name={'mercadopago_custom[installments]'}/>
                 <input type={'hidden'} id={'paymentMethodId'} name={'mercadopago_custom[payment_method_id]'}/>
-                <input type={'hidden'} id={'mp-amount'} defaultValue={amount} name={'mercadopago_custom[amount]'}/>
+                <input type={'hidden'} id={'mp-amount'} defaultValue={0.00} name={'mercadopago_custom[amount]'}/>
 
                 <input
                     type={'hidden'}
                     id={'currency_ratio'}
-                    defaultValue={currency_ratio}
+                    defaultValue={0.00}
                     name={'mercadopago_custom[currency_ratio]'}
                 />
 
@@ -224,7 +230,7 @@ const Content = (props) => {
                     type={'hidden'}
                     id={'mp_checkout_type'}
                     name={'mercadopago_custom[checkout_type]'}
-                    value={checkoutType}
+                    value={'custom'}
                 />
             </div>
         </div>
