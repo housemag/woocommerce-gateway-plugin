@@ -102,8 +102,6 @@ const InputDocument = ({
     };
 
     const inputDocumentOnBlurHandler = (event) => {
-        console.log(event)
-
         const validatorSelector = {
             CPF: CPFValidator,
             CNPJ: CNPJValidator,
@@ -120,6 +118,7 @@ const InputDocument = ({
 
             if (isDocumentValid) {
                 mpInput.classList.remove('mp-error');
+                mpInput.classList.remove('mp-focus');
 
                 setHelperDisplay('none');
                 setDocumentInputNameState(inputName);
@@ -130,6 +129,8 @@ const InputDocument = ({
             }
 
         }
+
+
 
     };
 

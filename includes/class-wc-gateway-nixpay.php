@@ -76,7 +76,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         $this->description = $this->get_option('description');
         $this->instructions = $this->get_option('instructions', $this->description);
         $this->hide_for_non_admin_users = $this->get_option('hide_for_non_admin_users');
-        $this->signatue_item_id = $this->get_option('signatue_item_id');
+        $this->signature_item_id = $this->get_option('signature_item_id');
         $this->recurrence_plan_id = $this->get_option('recurrence_plan_id');
 
         $this->production_api_user = $this->get_option('production_api_user');
@@ -131,7 +131,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                 'default' => __('Não é necessário dinheiro.', 'woocommerce-gateway-nixpay'),
                 'desc_tip' => true,
             ),
-            'signatue_item_id' => array(
+            'signature_item_id' => array(
                 'title' => __('ID do item de assinatura', 'woocommerce-gateway-nixpay'),
                 'type' => 'text',
                 'description' => __('ID do produto de assinatura do WooCommerce', 'woocommerce-gateway-nixpay'),
@@ -172,7 +172,6 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
      */
     public function process_payment($order_id)
     {
-
         error_log(print_r($_POST, true));
         $order = wc_get_order($order_id);
 
@@ -180,59 +179,73 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
         $zip_code = str_replace('-', '', $order->get_billing_postcode());
 
-        $payload = wp_json_encode(
-            array(
-                'merchantOrderId' => 'teste-gabriel-wordpress-1',
-                'transactionType' => 1,
-                'returnUrl' => 'https://teste.com',
-                'customer' => array(
-                    "tag" => $order->get_formatted_billing_full_name(),
-                    "name" => $order->get_formatted_billing_full_name(),
-                    "identity" => "50644825820",
-                    "identityType" => "CPF",
-                    "email" => $order->get_billing_email(),
-                    "birthdate" => "2002-08-27T00:00:00",
-                    "address" => array(
-                        "country" => $order->get_billing_country(),
-                        "zipCode" => $zip_code,
-                        "number" => "85",
-                        "street" => $order->get_billing_address_1(),
-                        "complement" => $order->get_billing_address_2(),
-                        "city" => $order->get_billing_city(),
-                        "state" => $order->get_billing_state(),
-                    )
+        $merchant_order_id = wp_generate_uuid4();
+
+        $payload = array(
+            'merchantOrderId' => $merchant_order_id,
+            'transactionType' => 1,
+            'returnUrl' => 'https://teste.com',
+            'customer' => array(
+                "tag" => $order->get_formatted_billing_full_name(),
+                "name" => $order->get_formatted_billing_full_name(),
+                "identity" => $_POST['holder_document_number'],
+                "identityType" => $_POST['holder_document_type'],
+                "email" => $order->get_billing_email(),
+                "birthdate" => "2002-08-27T00:00:00",
+                "address" => array(
+                    "country" => $order->get_billing_country(),
+                    "zipCode" => $zip_code,
+                    "number" => "85",
+                    "street" => $order->get_billing_address_1(),
+                    "complement" => $order->get_billing_address_2(),
+                    "city" => $order->get_billing_city(),
+                    "state" => $order->get_billing_state(),
+                )
+            ),
+            'amount' => $amount,
+            'installments' => $_POST['installments_transaction'],
+            'card' => array(
+                'number' => $_POST['card_number'],
+                'securityCode' => $_POST['card_security_code'],
+                'expirationDate' => array(
+                    'year' => '20' . $_POST['expiration_card_year'],
+                    'month' => $_POST['expiration_card_month']
                 ),
-                'amount' => $amount,
-                'installments' => 1,
-                'card' => array(
-                    'number' => '5487542468386489',
-                    'securityCode' => '865',
-                    'expirationDate' => array(
-                        'year' => '2025',
-                        'month' => '07'
-                    ),
-                    'holder' => array(
-                        'name' => 'Gabriel Cavalheiro',
-                        'socialNumber' => '50644825820'
-                    )
+                'holder' => array(
+                    'name' => $_POST['holder_name'],
+                    'socialNumber' => $_POST['holder_document_number']
                 )
             )
+
         );
+        $signature_item = $order->get_item(intval($this->signature_item_id));
+        if ($signature_item) {
+            $payload += array(
+                'recurrence' => array(
+                    'merchantPlanId' => $this->recurrence_plan_id,
+                    'startDate' => date('Y-m-d') . 'T' . date('H:i:s')
+                )
+            );
+        }
+
+        $encoded_payload = wp_json_encode($payload);
+
         error_log(print_r('payload:', true));
-        error_log(print_r('' . $payload, true));
+        error_log(print_r('' . $encoded_payload, true));
 
 
-        $this->send_card_payment($payload);
+        $this->send_card_payment($encoded_payload);
         error_log(print_r('caiu no pay', true));
 
 
-        $signature_item = $order->get_item(intval($this->signatue_item_id));
         if ($signature_item) {
             $user = $order->get_user();
-            $user->remove_role('subscriber');
-            $user->add_role('subscriber_premium');
-        }
+            if ($user) {
+                $user->remove_role('subscriber');
+                $user->add_role('subscriber_premium');
+            }
 
+        }
 
         $order->payment_complete();
 
@@ -259,8 +272,9 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         );
         error_log(print_r('' . wp_remote_retrieve_body($response), true));
 
+        $status_code = wp_remote_retrieve_response_code($response);
 
-        if (is_wp_error($response)) {
+        if ($status_code > 299) {
             throw new Exception('Ocorreu um erro no processamento do seu pagamento.');
         }
 

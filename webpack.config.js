@@ -27,13 +27,6 @@ const requestToHandle = (request) => {
 // Export configuration.
 module.exports = {
 	...defaultConfig,
-	entry: {
-		'frontend/blocks': '/resources/js/frontend/index.js',
-	},
-	output: {
-		path: path.resolve( __dirname, 'assets/js' ),
-		filename: '[name].js',
-	},
 	plugins: [
 		...defaultConfig.plugins.filter(
 			(plugin) =>
