@@ -20,9 +20,7 @@ const defaultLabel = decodeEntities(settings.title) || 'Cartão de Crédito';
  */
 const Content = (props) => {
     const {
-        test_mode,
-        amount,
-        currency_ratio,
+        test_mode
     } = settings.params;
 
     const ref = useRef(null);
