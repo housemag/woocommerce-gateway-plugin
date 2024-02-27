@@ -329,8 +329,11 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
     public function getPaymentFieldsParams()
     {
+        global $woocommerce;
+
         return [
-            'test_mode' => $this->test_mode
+            'test_mode' => $this->test_mode,
+            'total_cart_amount' => $woocommerce->cart->total
         ];
 
     }

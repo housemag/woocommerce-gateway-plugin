@@ -20,8 +20,10 @@ const defaultLabel = decodeEntities(settings.title) || 'Cartão de Crédito';
  */
 const Content = (props) => {
     const {
-        test_mode
+        test_mode,
+        total_cart_amount,
     } = settings.params;
+    console.log(settings.params)
 
     const ref = useRef(null);
     const [checkoutType, setCheckoutType] = useState('custom');
@@ -158,7 +160,7 @@ const Content = (props) => {
                                  style={{display: 'block'}}>
                                 <p className={'mp-checkout-custom-card-form-title'}>Escolha o número de parcelas</p>
 
-                                <InputInstallments totalAmount={5000}
+                                <InputInstallments totalAmount={total_cart_amount}
                                                    totalInstallments={12}
                                                    inputHelperMessage={'Escolha o número de parcelas'}
                                                    inputHelperId={'mp-installments-helper'}
