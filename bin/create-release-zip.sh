@@ -3,15 +3,20 @@
 BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 BASE_DIR=$BIN_DIR/..
 TMP_DIR="/tmp/woocommerce-nixpay"
+ZIP_FILE="woocommerce-nixpay.zip"
 
 shopt -s extglob
 
 if [ -d "$TMP_DIR" ]; then
-	rm -rf $TMP_DIR/*
+	rm -rf $TMP_DIR
 fi
 
 if [ ! -d "$TMP_DIR" ]; then
 	mkdir $TMP_DIR
+fi
+
+if [ -d "$ZIP_FILE" ]; then
+  rm $ZIP_FILE;
 fi
 
 npm run build
