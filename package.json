@@ -17,11 +17,17 @@
 		"@wordpress/html-entities": "^3.52.0",
 		"@wordpress/scripts": "^27.3.0",
 		"cross-env": "7.0.3",
-		"woocommerce": "^2.4.0"
+		"woocommerce": "^2.4.0",
+		"css-minimizer-webpack-plugin": "^5.0.1",
+		"minify": "^7.2.2",
+		"jshint": "^2.13.5",
+		"webpack-cli": "^5.1.4"
 	},
 	"scripts": {
 		"start": "wp-scripts start",
-		"build": "wp-scripts build --webpack-src-dir=assets/js --output-path=build",
+		"build": "npm run build:css && npm run build:webpack",
+		"build:webpack": "wp-scripts build assets/js/blocks/**.js",
+		"build:css": "node -e 'require(\"./main.js\").minifyFiles(\"css\")'",
 		"i18n": "npm run i18n:build",
 		"i18n:build": "npm run i18n:pot && ./bin/build_i18n.sh",
 		"i18n:pot": "php -d xdebug.max_nesting_level=512 $(which wp) i18n make-pot --exclude=\"node_modules/,languages/,assets/\" --headers='{\"Report-Msgid-Bugs-To\":\"https://woocommerce.com/my-account/create-a-ticket/\", \"language-team\":\"LANGUAGE <EMAIL@ADDRESS>\"}' . languages/woocommerce-gateway-nixpay.pot",

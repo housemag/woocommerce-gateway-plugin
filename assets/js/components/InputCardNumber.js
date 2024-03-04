@@ -45,7 +45,7 @@ const InputCardNumber = ({hiddenId, inputLabelMessage, inputHelperMessage}) => {
             <input type={'hidden'} name={'card-number-hidden'} id={hiddenId}/>
 
             <InputHelper isVisible={false} message={inputHelperMessage}
-                         inputId={'mp-card-number-helper'}/>
+                         inputId={'card-number-hidden-input-helper'}/>
         </div>
     )
 };
