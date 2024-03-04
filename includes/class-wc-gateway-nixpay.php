@@ -29,18 +29,29 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
     protected $instructions;
 
     /**
-     * Whether the gateway is visible for non-admin users.
-     * @var boolean
-     *
-     */
-    protected $hide_for_non_admin_users;
-
-    /**
      * Unique id for the gateway.
      * @var string
      *
      */
     public $id = 'nixpay';
+    public const WEBHOOK_ENDPOINT = 'NIX-PAY-CREDIT-WEBHOOK';
+
+    public $woocommerce;
+    public $title;
+    public $description;
+    public $signature_item_id;
+    public $recurrence_plan_id;
+    public $production_api_user;
+    public $production_api_password;
+    public $test_mode;
+    public $test_api_user;
+    public $test_api_password;
+    public string $cadun_url;
+    public string $base_url;
+    public $cadun_user;
+    public $cadun_password;
+    public string $card_payments_url;
+
 
     /**
      * Constructor for the gateway.
@@ -75,7 +86,6 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
         $this->instructions = $this->get_option('instructions', $this->description);
-        $this->hide_for_non_admin_users = $this->get_option('hide_for_non_admin_users');
         $this->signature_item_id = $this->get_option('signature_item_id');
         $this->recurrence_plan_id = $this->get_option('recurrence_plan_id');
 
@@ -97,6 +107,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         // Actions.
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         add_action('woocommerce_scheduled_subscription_payment_nixpay', array($this, 'process_subscription_payment'), 10, 2);
+        add_action('woocommerce_api_' . strtolower(self::WEBHOOK_ENDPOINT), [$this, 'webhook']);
     }
 
     /**
@@ -182,7 +193,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         $merchant_order_id = wp_generate_uuid4();
 
         $payload = array(
-            'merchantOrderId' => $merchant_order_id,
+            'merchantOrderId' => "woocommerceOrder-$order_id",
             'transactionType' => 1,
             'returnUrl' => 'https://teste.com',
             'customer' => array(
@@ -195,7 +206,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                 "address" => array(
                     "country" => $order->get_billing_country(),
                     "zipCode" => $zip_code,
-                    "number" => "85",
+                    "number" => "01",
                     "street" => $order->get_billing_address_1(),
                     "complement" => $order->get_billing_address_2(),
                     "city" => $order->get_billing_city(),
@@ -247,8 +258,6 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
         }
 
-        $order->payment_complete();
-
         // Remove cart
         WC()->cart->empty_cart();
 
@@ -274,7 +283,14 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
         $status_code = wp_remote_retrieve_response_code($response);
 
+        $decoded_body = json_decode(wp_remote_retrieve_body($response));
+
         if ($status_code > 299) {
+            if (!empty($decoded_body->errors)
+                and $decoded_body->errors[0] == 'Data.Card.Number: The Number field is not a valid credit card number.') {
+                throw new Exception('O cartão informado é inválido.');
+
+            }
             throw new Exception('Ocorreu um erro no processamento do seu pagamento.');
         }
 
@@ -315,14 +331,48 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         error_log(print_r('auth:', true));
         error_log(print_r('' . wp_remote_retrieve_body($response), true));
 
+        $status_code = wp_remote_retrieve_response_code($response);
 
-        if (is_wp_error($response)) {
+        if ($status_code > 299) {
             throw new Exception('Ocorreu um erro no processamento do seu pagamento.');
         }
 
         $decoded_body = json_decode(wp_remote_retrieve_body($response));
 
         return $decoded_body->access_token;
+
+    }
+
+    public function webhook(): void
+    {
+
+        $postData = file_get_contents('php://input');
+        $requestData = json_decode($postData);
+
+        $order_id = explode('-', $requestData->merchantOrderId)[1];
+        error_log("Webhook receivied for order_id: $order_id");
+
+        $order = wc_get_order($order_id);
+
+        $matchPattern = [
+            1 => 'wc-pending',
+            2 => 'wc-completed',
+            3 => 'wc-cancelled',
+            5 => 'wc-refunded',
+            6 => 'wc-refunded',
+            7 => 'wc-failed',
+            8 => 'wc-failed',
+            9 => 'wc-failed',
+        ];
+
+        $newStatus = $matchPattern[$requestData->payment->paymentStatus];
+        if ($newStatus == 'wc-completed'){
+            $order->payment_complete();
+        }
+        $order->update_status($newStatus);
+
+        error_log("Order $order_id status updated to $newStatus");
+
 
     }
 

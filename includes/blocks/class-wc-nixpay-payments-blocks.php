@@ -51,8 +51,8 @@ final class WC_Gateway_NixPay_Blocks_Support extends AbstractPaymentMethodType
      */
     public function get_payment_method_script_handles()
     {
-        $script_path = '/build/index.js';
-        $script_asset_path = WC_NixPay_Payments::plugin_abspath() . 'build/index.asset.php';
+        $script_path = '/build/credit.block.js';
+        $script_asset_path = WC_NixPay_Payments::plugin_abspath() . 'build/credit.block.asset.php';
         $script_asset = file_exists($script_asset_path)
             ? require($script_asset_path)
             : array(
@@ -63,7 +63,7 @@ final class WC_Gateway_NixPay_Blocks_Support extends AbstractPaymentMethodType
 
         wp_enqueue_style(
             'wc-blocks-checkout-style',
-            WC_NixPay_Payments::plugin_url() . '/build/index.css',
+            WC_NixPay_Payments::plugin_url() . '/assets/css/styles.min.css',
             [],
             '1.0'
         );

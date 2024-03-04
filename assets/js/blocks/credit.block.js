@@ -1,16 +1,14 @@
-import '/assets/js/styles.css';
 import {registerPaymentMethod} from '@woocommerce/blocks-registry';
 import {decodeEntities} from '@wordpress/html-entities';
 import {getSetting} from '@woocommerce/settings';
 import {useState, useRef, useEffect} from '@wordpress/element';
 
-import InputDocument from './components/InputDocument';
-import InputHelper from './components/InputHelper';
-import InputLabel from './components/InputLabel';
-import TestMode from './components/TestMode';
-import InputCardNumber from "./components/InputCardNumber";
-import InputCardExpirationDate from "./components/InputCardExpirationDate";
-import InputInstallments from "./components/InputInstallments";
+import InputDocument from '../components/InputDocument';
+import InputHelper from '../components/InputHelper';
+import InputLabel from '../components/InputLabel';
+import InputCardNumber from "../components/InputCardNumber";
+import InputCardExpirationDate from "../components/InputCardExpirationDate";
+import InputInstallments from "../components/InputInstallments";
 
 const settings = getSetting('nixpay_data', {});
 
@@ -23,13 +21,15 @@ const Content = (props) => {
         test_mode,
         total_cart_amount,
     } = settings.params;
-    console.log(settings.params)
-
-    const ref = useRef(null);
-    const [checkoutType, setCheckoutType] = useState('custom');
 
     const {eventRegistration, emitResponse} = props;
     const {onPaymentSetup} = eventRegistration;
+
+    function setInputDisplayStyle(inputElement, displayValue) {
+        if (inputElement && inputElement.style) {
+            inputElement.style.display = displayValue;
+        }
+    }
 
 
     useEffect(() => {
@@ -37,16 +37,53 @@ const Content = (props) => {
             // Here we can do any processing we need, and then emit a response.
             // For example, we might validate a custom field, or perform an AJAX request, and then emit a response indicating it is valid or not.
 
-            const holder_name = document.getElementById('card-holder-name').value;
-            const holder_document_number = document.getElementById('holder-social-number-hidden').value;
-            const holder_document_type = document.getElementById('holder-social-number-type').value;
+            const holder_name_element = document.getElementById('card-holder-name');
 
-            const card_number = document.getElementById('card-number-hidden-input').value;
-            const expiration_card_month = document.getElementById('card-expiry-month-hidden').value;
-            const expiration_card_year = document.getElementById('card-expiry-year-hidden').value;
-            const card_security_code = document.getElementById('card-security-code').value;
+            const holder_document_number_element = document.getElementById('holder-social-number-hidden');
+            const holder_document_type_element = document.getElementById('holder-social-number-type');
 
-            const installments_transaction = document.getElementById('card-selected-installment-hidden').value;
+            const card_number_element = document.getElementById('card-number-hidden-input');
+            const expiration_card_month_element = document.getElementById('card-expiry-month-hidden');
+            const expiration_card_year_element = document.getElementById('card-expiry-year-hidden');
+            const card_security_code_element = document.getElementById('card-security-code');
+
+            const installments_transaction_element = document.getElementById('card-selected-installment-hidden');
+
+            const all_fields = [
+                holder_name_element,
+                holder_document_number_element,
+                card_number_element,
+                expiration_card_month_element,
+                expiration_card_year_element,
+                card_security_code_element,
+                installments_transaction_element];
+
+            let has_error = false;
+
+            for (const field of all_fields) {
+                if (field.value === 'undefined' || field.value === '' || field.value === 0) {
+                    setInputDisplayStyle(field.id + '-helper', 'flex');
+                    has_error = true;
+                }
+            }
+
+            if (has_error) {
+                return {
+                    type: emitResponse.responseTypes.ERROR
+                }
+            }
+
+            const holder_name = holder_name_element.value;
+            const holder_document_number = holder_document_number_element.value;
+            const holder_document_type = holder_document_type_element.value;
+
+            const card_number = card_number_element.value;
+            const expiration_card_month = expiration_card_month_element.value;
+            const expiration_card_year = expiration_card_year_element.value;
+            const card_security_code = card_security_code_element.value;
+
+            const installments_transaction = installments_transaction_element.value;
+
 
             return {
                 type: emitResponse.responseTypes.SUCCESS,
@@ -105,7 +142,7 @@ const Content = (props) => {
                                 <InputHelper
                                     isVisible={false}
                                     message={'Dado obrigatório'}
-                                    inputId={'mp-card-holder-name-helper'}
+                                    inputId={'card-holder-name-helper'}
                                 />
                             </div>
 
@@ -134,7 +171,7 @@ const Content = (props) => {
                                     <InputHelper
                                         isVisible={false}
                                         message={'Dado obrigatório'}
-                                        inputId={'mp-security-code-helper'}
+                                        inputId={'card-security-code-helper'}
                                     />
                                 </div>
                             </div>
@@ -169,7 +206,7 @@ const Content = (props) => {
                                 <InputHelper
                                     isVisible={false}
                                     message={'Escolha o número de parcelas'}
-                                    inputId={'mp-installments-helper'}
+                                    inputId={'card-selected-installment-hidden-helper'}
                                 />
                             </div>
 
