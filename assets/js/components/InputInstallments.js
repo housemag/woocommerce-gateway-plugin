@@ -10,8 +10,7 @@ const InputInstallments = ({
                            }) => {
 
     const createInstallment = (radioName, radioValue, radioId, amount, installment) => {
-        const amountRounded = (Math.round(amount * 100) / 100).toFixed(2)
-        const formattedAmount = amountRounded.toString()
+        const formattedAmount = amount.toLocaleString('pt-br', {style: 'currency', currency: 'BRL'});
 
         const labelOnClickHandler = (event) => {
             const installmentRadio = document.getElementById(radioId);
@@ -32,7 +31,7 @@ const InputInstallments = ({
                         <InputRadio name={radioName} value={radioValue} radioId={radioId}/>
 
                         <span
-                            className={'mp-input-table-row-text'}>{installment} Parcela de R$ {formattedAmount}</span>
+                            className={'mp-input-table-row-text'}>{installment} Parcela de {formattedAmount}</span>
                     </div>
 
                     <span className={'mp-input-table-row-obs-highlight'}>Sem acréscimos</span>

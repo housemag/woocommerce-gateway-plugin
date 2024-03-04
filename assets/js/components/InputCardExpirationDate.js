@@ -70,7 +70,7 @@ const InputCardExpirationDate = ({inputLabelMessage, inputHelperMessage, placeho
             <InputHelper
                 isVisible={false}
                 message={inputHelperMessage}
-                inputId={'mp-expiration-date-helper'}
+                inputId={'card-expiry-month-hidden-helper'}
             />
         </div>
     )
