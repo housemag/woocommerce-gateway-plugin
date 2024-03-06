@@ -1,11 +1,10 @@
 import {registerPaymentMethod} from '@woocommerce/blocks-registry';
 import {decodeEntities} from '@wordpress/html-entities';
 import {getSetting} from '@woocommerce/settings';
-import {useState, useRef, useEffect} from '@wordpress/element';
+import {useEffect} from '@wordpress/element';
 
 import InputDocument from '../components/InputDocument';
 import InputHelper from '../components/InputHelper';
-import InputLabel from '../components/InputLabel';
 import InputCardNumber from "../components/InputCardNumber";
 import InputCardExpirationDate from "../components/InputCardExpirationDate";
 import InputInstallments from "../components/InputInstallments";
@@ -15,9 +14,7 @@ import InputSecurityCode from "../components/InputSecurityCode";
 const settings = getSetting('nixpay_data', {});
 
 const defaultLabel = decodeEntities(settings.title) || 'Cartão de Crédito';
-/**
- * Content component
- */
+
 const Content = (props) => {
     const {
         test_mode,
@@ -135,9 +132,6 @@ const Content = (props) => {
             </div>
         </form>
     );
-
-
-    return decodeEntities(settings.description || '');
 };
 /**
  * Label component
