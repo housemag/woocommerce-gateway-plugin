@@ -84,8 +84,6 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
         // Define user set variables.
         $this->title = $this->get_option('title');
-        $this->description = $this->get_option('description');
-        $this->instructions = $this->get_option('instructions', $this->description);
         $this->signature_item_id = $this->get_option('signature_item_id');
         $this->recurrence_plan_id = $this->get_option('recurrence_plan_id');
 
@@ -123,41 +121,32 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                 'label' => __('Ativa o NixPay Payments', 'woocommerce-gateway-nixpay'),
                 'default' => 'yes',
             ),
-            'hide_for_non_admin_users' => array(
-                'type' => 'checkbox',
-                'label' => __('Hide at checkout for non-admin users', 'woocommerce-gateway-nixpay'),
-                'default' => 'no',
-            ),
             'title' => array(
                 'title' => __('Título', 'woocommerce-gateway-nixpay'),
                 'type' => 'text',
                 'description' => __('Isto controla o título que o usuário vê durante o checkout.', 'woocommerce-gateway-nixpay'),
-                'default' => _x('NixPay Payment', 'NixPay payment method', 'woocommerce-gateway-nixpay'),
-                'desc_tip' => true,
-            ),
-            'description' => array(
-                'title' => __('Descrição', 'woocommerce-gateway-nixpay'),
-                'type' => 'textarea',
-                'description' => __('Descrição do método de pagamento que o cliente verá no seu checkout.', 'woocommerce-gateway-nixpay'),
-                'default' => __('Não é necessário dinheiro.', 'woocommerce-gateway-nixpay'),
+                'default' => 'Cartão de Crédito',
                 'desc_tip' => true,
             ),
             'signature_item_id' => array(
                 'title' => __('ID do item de assinatura', 'woocommerce-gateway-nixpay'),
                 'type' => 'text',
-                'description' => __('ID do produto de assinatura do WooCommerce', 'woocommerce-gateway-nixpay'),
+                'description' => 'Informe aqui o ID do produto no WooCommerce que será cadastrado para recorrência',
             ),
             'recurrence_plan_id' => array(
-                'title' => __('ID do plano de recorrência NixPay', 'woocommerce-gateway-nixpay'),
+                'title' => __('ID do plano de recorrência Nix Empresas', 'woocommerce-gateway-nixpay'),
                 'type' => 'text',
+                'description' => 'Informe aqui o ID do plano cadastrado na plataforma NIX Empresa dentro de Gestão de Assinaturas > Planos'
             ),
             'production_api_user' => array(
                 'title' => __('Usuário API de produção', 'woocommerce-gateway-nixpay'),
                 'type' => 'text',
+                'description' => 'Credenciais criadas dentro do Nix Empresa em configurações > Integração via API'
             ),
             'production_api_password' => array(
                 'title' => __('Senha do usuário API de produção', 'woocommerce-gateway-nixpay'),
                 'type' => 'password',
+                'description' => 'Credenciais criadas dentro do Nix Empresa em configurações > Integração via API'
             ),
             'test_mode' => array(
                 'title' => __('Modo de teste', 'woocommerce-gateway-nixpay'),
@@ -165,12 +154,14 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                 'description' => __('Habilita/Desabilita o modo de teste.', 'woocommerce-gateway-nixpay'),
             ),
             'test_api_user' => array(
-                'title' => __('Usuário API de Sandbox', 'woocommerce-gateway-nixpay'),
+                'title' => __('Usuário API de teste', 'woocommerce-gateway-nixpay'),
                 'type' => 'text',
+                'description' => 'Caso não tenha conta de teste, solicite em nosso suporte'
             ),
             'test_api_password' => array(
-                'title' => __('Senha do usuário API de Sandbox', 'woocommerce-gateway-nixpay'),
+                'title' => __('Senha do usuário API de teste', 'woocommerce-gateway-nixpay'),
                 'type' => 'password',
+                'description' => 'Caso não tenha conta de teste, solicite em nosso suporte'
             )
         );
     }
@@ -195,7 +186,8 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         $payload = array(
             'merchantOrderId' => "woocommerceOrder-$order_id",
             'transactionType' => 1,
-            'returnUrl' => 'https://teste.com',
+            'callbackUrl' => 'https://staging.housemag.top/wc-api/nix-pay-credit-webhook',
+            'returnUrl' => 'https://staging.housemag.top/wc-api/nix-pay-credit-webhook',
             'customer' => array(
                 "tag" => $order->get_formatted_billing_full_name(),
                 "name" => $order->get_formatted_billing_full_name(),
@@ -214,6 +206,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                 )
             ),
             'amount' => $amount,
+            'capture' => true,
             'installments' => $_POST['installments_transaction'],
             'card' => array(
                 'number' => $_POST['card_number'],
@@ -345,9 +338,11 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
     public function webhook(): void
     {
-
+        error_log(print_r($_REQUEST, true));
         $postData = file_get_contents('php://input');
+        error_log($postData);
         $requestData = json_decode($postData);
+        error_log($requestData);
 
         $order_id = explode('-', $requestData->merchantOrderId)[1];
         error_log("Webhook receivied for order_id: $order_id");
@@ -366,7 +361,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         ];
 
         $newStatus = $matchPattern[$requestData->payment->paymentStatus];
-        if ($newStatus == 'wc-completed'){
+        if ($newStatus == 'wc-completed') {
             $order->payment_complete();
         }
         $order->update_status($newStatus);
