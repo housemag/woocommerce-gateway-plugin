@@ -27,8 +27,6 @@ const Content = (props) => {
     const {eventRegistration, emitResponse} = props;
     const {onPaymentSetup} = eventRegistration;
 
-    const formErrorRef = useRef(false);
-
 
     useEffect(() => {
         const unsubscribe = onPaymentSetup(async () => {
@@ -46,27 +44,20 @@ const Content = (props) => {
 
             const installments_transaction = document.getElementById('card-selected-installment-hidden').value;
 
-            if (formErrorRef.current) {
-                console.log(formErrorRef.current)
-                return {
-                    type: emitResponse.responseTypes.ERROR
-                }
-            } else {
-                return {
-                    type: emitResponse.responseTypes.SUCCESS,
-                    meta: {
-                        paymentMethodData: {
-                            holder_name,
-                            holder_document_number,
-                            holder_document_type,
-                            card_number,
-                            expiration_card_month,
-                            expiration_card_year,
-                            card_security_code,
-                            installments_transaction
-                        },
+            return {
+                type: emitResponse.responseTypes.SUCCESS,
+                meta: {
+                    paymentMethodData: {
+                        holder_name,
+                        holder_document_number,
+                        holder_document_type,
+                        card_number,
+                        expiration_card_month,
+                        expiration_card_year,
+                        card_security_code,
+                        installments_transaction
                     },
-                }
+                },
             }
 
         });
