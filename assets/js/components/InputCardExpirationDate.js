@@ -1,7 +1,10 @@
 import InputLabel from "./InputLabel";
 import InputHelper from "./InputHelper";
+import {useState} from "@wordpress/element";
 
-const InputCardExpirationDate = ({inputLabelMessage, inputHelperMessage, placeholder}) => {
+const InputCardExpirationDate = ({inputLabelMessage, placeholder}) => {
+    const [helperVisibility, setHelperVisibility] = useState(false);
+    const [helperMessage, setHelperMessage] = useState('Dado obrigatório');
 
     const setExpirationDateMark = (event) => {
         let inputChar = String.fromCharCode(event.keyCode);
@@ -29,22 +32,67 @@ const InputCardExpirationDate = ({inputLabelMessage, inputHelperMessage, placeho
         event.target.value = formattedValue;
     };
 
-    const expirationDateInputOnBlurHandler = (event) => {
-        if (event.target.value !== '') {
+    const validateExpirationDate = (inputMonth, inputYear) => {
+        const now = new Date();
+        const currentYear = now.getFullYear() - 2000;
+
+        if (parseInt(inputYear) < currentYear) {
+            setHelperMessage('Data inválida')
+            setHelperVisibility(true);
+            return false;
+        }
+
+        const currentMonth = now.getMonth() + 1;
+
+        if (parseInt(inputMonth) < currentMonth && parseInt(inputYear) === currentYear) {
+            setHelperMessage('Data inválida')
+            setHelperVisibility(true);
+            return false;
+        }
+
+        return true;
+    }
+
+    const injectExpirationDateInHidden = (inputMonth, inputYear) => {
+        const monthHidden = document.getElementsByName('card-expiry-month-hidden')[0];
+        if (monthHidden) {
+            monthHidden.value = inputMonth;
+        }
+
+        const yearHidden = document.getElementsByName('card-expiry-year-hidden')[0];
+        if (yearHidden) {
+            yearHidden.value = inputYear;
+        }
+    }
+
+    const inputOnBlurHandler = (event) => {
+        event.target.classList.remove('mp-focus');
+
+        if (event.target.value === '' || event.target.value === undefined) {
+            setHelperMessage('Dado obrigatório');
+            event.target.classList.add('mp-error');
+            setHelperVisibility(true);
+
+        } else {
             let regExp = /(1[0-2]|0[1-9]|\d)\/(20\d{2}|19\d{2}|0(?!0)\d|[1-9]\d)/;
             let matches = regExp.exec(event.target.value);
 
-            const monthHidden = document.getElementsByName('card-expiry-month-hidden')[0];
-            if (monthHidden) {
-                monthHidden.value = matches[1];
+            let isValid = validateExpirationDate(matches[1], matches[2]);
+            if (!isValid) {
+                event.target.classList.add('mp-error');
             }
 
-            const yearHidden = document.getElementsByName('card-expiry-year-hidden')[0];
-            if (yearHidden) {
-                yearHidden.value = matches[2];
-            }
+            injectExpirationDateInHidden(matches[1], matches[2])
+
         }
     };
+
+    const inputOnFocusHandler = (event) => {
+        event.target.classList.add('mp-focus');
+        event.target.classList.remove('mp-error');
+
+        setHelperVisibility(false);
+    }
 
     return (
         <div className={'mp-checkout-custom-card-column'}>
@@ -62,14 +110,15 @@ const InputCardExpirationDate = ({inputLabelMessage, inputHelperMessage, placeho
                 }}
                 type={'text'}
                 onKeyUp={setExpirationDateMark}
-                onBlur={expirationDateInputOnBlurHandler}
+                onFocus={inputOnFocusHandler}
+                onBlur={inputOnBlurHandler}
             />
             <input type="hidden" name="card-expiry-month-hidden" id={'card-expiry-month-hidden'}/>
             <input type="hidden" name="card-expiry-year-hidden" id={'card-expiry-year-hidden'}/>
 
             <InputHelper
-                isVisible={false}
-                message={inputHelperMessage}
+                isVisible={helperVisibility}
+                message={helperMessage}
                 inputId={'card-expiry-month-hidden-helper'}
             />
         </div>
