@@ -30,7 +30,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
     public $woocommerce;
     public $title;
-    public $installments_quantity;
+    public $total_installments;
     public $signature_item_id;
     public $recurrence_plan_id;
     public $production_api_user;
@@ -76,7 +76,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
         // Define user set variables.
         $this->title = $this->get_option('title');
-        $this->installments_quantity = $this->get_option('installments_quantity');
+        $this->total_installments = $this->get_option('total_installments');
         $this->signature_item_id = $this->get_option('signature_item_id');
         $this->recurrence_plan_id = $this->get_option('recurrence_plan_id');
 
@@ -100,6 +100,17 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         add_action('woocommerce_scheduled_subscription_payment_nixpay', array($this, 'process_subscription_payment'), 10, 2);
     }
 
+    public function validate_total_installments_field($key, $value)
+    {
+        if ($value == '' or $value == null) {
+            WC_Admin_Settings::add_error('É necessário informar o número de parcelas');
+            $value = 1;
+        }
+
+        return $value;
+
+    }
+
     /**
      * Initialise Gateway Settings Form Fields.
      */
@@ -118,7 +129,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                 'description' => 'Infome aqui o título que o usuário vê durante o checkout',
                 'default' => 'Cartão de Crédito',
             ),
-            'installments_quantity' => array(
+            'total_installments' => array(
                 'title' => 'Parcelas',
                 'type' => 'number',
                 'description' => 'Informe aqui o numero de parcelas que deseja oferecer em sua loja',
@@ -341,7 +352,8 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
 
         return [
             'test_mode' => $this->test_mode,
-            'total_cart_amount' => $woocommerce->cart->total
+            'total_installments' => $this->total_installments,
+            'total_cart_amount' => $woocommerce->cart->total,
         ];
 
     }

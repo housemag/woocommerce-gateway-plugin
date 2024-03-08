@@ -30,8 +30,9 @@ const InputInstallments = ({
                     <div className={'mp-input-table-option'}>
                         <InputRadio name={radioName} value={radioValue} radioId={radioId}/>
 
-                        <span
-                            className={'mp-input-table-row-text'}>{installment} Parcela de {formattedAmount}</span>
+                        <span className={'mp-input-table-row-text'}>
+                            {installment === 1 ? `${formattedAmount} à Vista` : `${installment} Parcela de ${formattedAmount}`}
+                        </span>
                     </div>
 
                     <span className={'mp-input-table-row-obs-highlight'}>Sem acréscimos</span>
