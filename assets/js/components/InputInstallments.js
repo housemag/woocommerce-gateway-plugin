@@ -22,7 +22,7 @@ const InputInstallments = ({
             }
         }
 
-        const installmentDisplay = installment > 4 ? 'none' : 'flex';
+        const installmentDisplay = installment >= (totalInstallments / 2) ? 'none' : 'flex';
 
         return (
             <div className={'mp-input-table-item'} style={{display: installmentDisplay}}>
@@ -31,7 +31,7 @@ const InputInstallments = ({
                         <InputRadio name={radioName} value={radioValue} radioId={radioId}/>
 
                         <span className={'mp-input-table-row-text'}>
-                            {installment === 1 ? `${formattedAmount} à Vista` : `${installment} Parcela de ${formattedAmount}`}
+                            {installment === 1 ? `${formattedAmount} à Vista` : `${installment} Parcelas de ${formattedAmount}`}
                         </span>
                     </div>
 
