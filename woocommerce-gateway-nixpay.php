@@ -45,6 +45,16 @@ class WC_NixPay_Payments
         // Registers WooCommerce Blocks integration.
         add_action('woocommerce_blocks_loaded', array(__CLASS__, 'woocommerce_gateway_nixpay_woocommerce_block_support'));
 
+        add_action('rest_api_init', array(__CLASS__, 'add_custom_endpoints'));
+
+    }
+
+    public static function add_custom_endpoints()
+    {
+        require_once(plugin_dir_path(__FILE__) .'includes/endpoints/CreditWebhookCallback.php');
+        $credit_webhook = new CreditWebhookCallback();
+        $credit_webhook->register_routes();
+
     }
 
     /**
@@ -54,18 +64,7 @@ class WC_NixPay_Payments
      */
     public static function add_gateway($gateways)
     {
-
-        $options = get_option('woocommerce_nixpay_settings', array());
-
-        if (isset($options['hide_for_non_admin_users'])) {
-            $hide_for_non_admin_users = $options['hide_for_non_admin_users'];
-        } else {
-            $hide_for_non_admin_users = 'no';
-        }
-
-        if (('yes' === $hide_for_non_admin_users && current_user_can('manage_options')) || 'no' === $hide_for_non_admin_users) {
-            $gateways[] = 'WC_Gateway_NixPay';
-        }
+        $gateways[] = 'WC_Gateway_NixPay';
         return $gateways;
     }
 

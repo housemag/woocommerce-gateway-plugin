@@ -24,7 +24,7 @@
 		"webpack-cli": "^5.1.4"
 	},
 	"scripts": {
-		"start": "wp-scripts start",
+		"start": "wp-scripts start assets/js/blocks/**.js",
 		"build": "npm run build:css && npm run build:webpack",
 		"build:webpack": "wp-scripts build assets/js/blocks/**.js",
 		"build:css": "node -e 'require(\"./main.js\").minifyFiles(\"css\")'",
