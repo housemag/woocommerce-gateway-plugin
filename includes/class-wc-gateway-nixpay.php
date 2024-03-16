@@ -31,8 +31,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
     public $woocommerce;
     public $title;
     public $total_installments;
-    public $signature_item_id;
-    public $recurrence_plan_id;
+    public $signature_group_slug;
     public $production_api_user;
     public $production_api_password;
     public $test_mode;
@@ -77,8 +76,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         // Define user set variables.
         $this->title = $this->get_option('title');
         $this->total_installments = $this->get_option('total_installments');
-        $this->signature_item_id = $this->get_option('signature_item_id');
-        $this->recurrence_plan_id = $this->get_option('recurrence_plan_id');
+        $this->signature_group_slug = $this->get_option('signature_group_slug');
 
         $this->production_api_user = $this->get_option('production_api_user');
         $this->production_api_password = $this->get_option('production_api_password');
@@ -139,15 +137,10 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                     'max' => 12
                 )
             ),
-            'signature_item_id' => array(
+            'signature_group_slug' => array(
                 'title' => 'ID do item de assinatura',
                 'type' => 'text',
                 'description' => 'Informe aqui o ID do produto no WooCommerce que será cadastrado para recorrência',
-            ),
-            'recurrence_plan_id' => array(
-                'title' => 'ID do plano de recorrência Nix Empresas',
-                'type' => 'text',
-                'description' => 'Informe aqui o ID do plano cadastrado na plataforma NIX Empresa dentro de Gestão de Assinaturas > Planos'
             ),
             'production_api_user' => array(
                 'title' => 'Usuário API de produção',
@@ -191,12 +184,13 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         $amount = number_format($order->get_total() * 100.0, 0, '.', '');
 
         $zip_code = str_replace('-', '', $order->get_billing_postcode());
+        $site_url = str_replace("\/", "/", home_url('/wc-api/nix-pay-credit-webhook', 'https'));
 
         $payload = array(
             'merchantOrderId' => "woocommerceOrder-$order_id",
             'transactionType' => 1,
-            'callbackUrl' => home_url('/wc-api/nix-pay-credit-webhook', 'https'),
-            'returnUrl' => home_url('/wc-api/nix-pay-credit-webhook', 'https'),
+            'callbackUrl' => $site_url,
+            'returnUrl' => $site_url,
             'customer' => array(
                 "tag" => $order->get_formatted_billing_full_name(),
                 "name" => $order->get_formatted_billing_full_name(),
@@ -229,19 +223,39 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                     'socialNumber' => $_POST['holder_document_number']
                 )
             )
-
         );
-        $signature_item = $order->get_item(intval($this->signature_item_id));
-        if ($signature_item) {
+
+        $has_signature_category = false;
+        $recurrence_product_plan = null;
+
+        $items = $order->get_items();
+        foreach ($items as $item) {
+            $product_id = $item['product_id'];
+
+            $categories = get_the_terms($product_id, 'product_cat');
+            foreach ($categories as $category) {
+                $category_slug = $category->slug;
+                if ($category_slug == $this->signature_group_slug) {
+                    $has_signature_category = true;
+
+                    $tags = get_the_terms($product_id, 'product_tag');
+                    if ($tags) {
+                        $recurrence_product_plan = $tags[0]->name;
+                    }
+                }
+            }
+        }
+
+        if ($has_signature_category && $recurrence_product_plan) {
             $payload += array(
                 'recurrence' => array(
-                    'merchantPlanId' => $this->recurrence_plan_id,
+                    'merchantPlanId' => $recurrence_product_plan,
                     'startDate' => date('Y-m-d') . 'T' . date('H:i:s')
                 )
             );
         }
 
-        $encoded_payload = wp_json_encode($payload);
+        $encoded_payload = wp_json_encode($payload, JSON_UNESCAPED_SLASHES);
 
         error_log(print_r('payload:', true));
         error_log(print_r('' . $encoded_payload, true));
@@ -251,7 +265,7 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
         error_log(print_r('caiu no pay', true));
 
 
-        if ($signature_item) {
+        if ($has_signature_category && $recurrence_product_plan) {
             $user = $order->get_user();
             if ($user) {
                 $user->remove_role('subscriber');
