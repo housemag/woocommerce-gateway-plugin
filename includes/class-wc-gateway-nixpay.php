@@ -138,9 +138,10 @@ class WC_Gateway_NixPay extends WC_Payment_Gateway
                 )
             ),
             'signature_group_slug' => array(
-                'title' => 'ID do item de assinatura',
+                'title' => 'Slug da categoria de assinatura',
                 'type' => 'text',
-                'description' => 'Informe aqui o ID do produto no WooCommerce que será cadastrado para recorrência',
+                'description' => 'Informe aqui o Slug da categoria de assinatura. Para informar o plano da recorrência, 
+                é necessário criar uma tag com o nome do plano e associar aos seus produtos.',
             ),
             'production_api_user' => array(
                 'title' => 'Usuário API de produção',
